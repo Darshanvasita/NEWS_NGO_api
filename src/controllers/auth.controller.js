@@ -103,8 +103,15 @@ const acceptInvite = async (req, res) => {
   }
 };
 
+const logout = (req, res) => {
+  // For stateless JWT, logout is typically handled client-side by deleting the token.
+  // This endpoint is provided for completeness and can be extended for token blocklisting.
+  res.status(200).json({ message: 'Logout successful.' });
+};
+
 module.exports = {
   register,
   login,
   acceptInvite,
+  logout,
 };
