@@ -57,7 +57,54 @@ const login = async (req, res) => {
   }
 };
 
+const acceptInvite = async (req, res) => {
+  const { token } = req.params;
+  const { name, password } = req.body;
+
+  try {
+    // Verify the invitation token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.type !== 'invite') {
+      return res.status(400).json({ message: 'Invalid token type.' });
+    }
+
+    // Find user by ID from token
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+
+    // Check if user exists and is pending
+    if (!user || user.status !== 'pending') {
+      return res.status(400).json({ message: 'Invalid invitation or user already active.' });
+    }
+
+    // Hash password and update user
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        name,
+        password: hashedPassword,
+        status: 'active',
+      },
+    });
+
+    // Optionally, log the user in immediately
+    const sessionToken = jwt.sign({ id: updatedUser.id, role: updatedUser.role }, process.env.JWT_SECRET, {
+      expiresIn: '1h',
+    });
+
+    res.status(200).json({ message: 'Account activated successfully!', token: sessionToken });
+
+  } catch (error) {
+    if (error instanceof jwt.JsonWebTokenError) {
+      return res.status(401).json({ message: 'Invalid or expired invitation link.' });
+    }
+    console.error(error);
+    res.status(500).json({ message: 'Something went wrong', error: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
+  acceptInvite,
 };
