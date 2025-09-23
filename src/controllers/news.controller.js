@@ -1,4 +1,4 @@
-const prisma = require('../config/prisma');
+const { News, User } = require('../models');
 const cloudinary = require('cloudinary').v2;
 
 // Helper function to extract public_id from Cloudinary URL
@@ -23,13 +23,11 @@ const createNews = async (req, res) => {
   }
 
   try {
-    const news = await prisma.news.create({
-      data: {
-        title,
-        date: new Date(date),
-        pdfUrl: req.file.path, // URL from Cloudinary
-        authorId,
-      },
+    const news = await News.create({
+      title,
+      date: new Date(date),
+      pdfUrl: req.file.path,
+      authorId,
     });
     res.status(201).json(news);
   } catch (error) {
@@ -43,22 +41,12 @@ const getAllNews = async (req, res) => {
   const skip = (page - 1) * limit;
 
   try {
-    const news = await prisma.news.findMany({
-      skip: parseInt(skip),
-      take: parseInt(limit),
-      orderBy: {
-        date: 'desc',
-      },
-      include: {
-        author: {
-          select: {
-            name: true,
-          },
-        },
-      },
+    const { rows: news, count: totalNews } = await News.findAndCountAll({
+      offset: parseInt(skip),
+      limit: parseInt(limit),
+      order: [['date', 'DESC']],
+      include: [{ model: User, as: 'author', attributes: ['name'] }],
     });
-
-    const totalNews = await prisma.news.count();
     res.status(200).json({
       data: news,
       totalPages: Math.ceil(totalNews / limit),
@@ -74,15 +62,8 @@ const getNewsById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const newsItem = await prisma.news.findUnique({
-      where: { id: parseInt(id) },
-      include: {
-        author: {
-          select: {
-            name: true,
-          },
-        },
-      },
+    const newsItem = await News.findByPk(parseInt(id), {
+      include: [{ model: User, as: 'author', attributes: ['name'] }],
     });
 
     if (!newsItem) {
@@ -101,9 +82,7 @@ const deleteNews = async (req, res) => {
 
   try {
     // First, find the news item to get its PDF URL
-    const newsItem = await prisma.news.findUnique({
-      where: { id: parseInt(id) },
-    });
+    const newsItem = await News.findByPk(parseInt(id));
 
     if (!newsItem) {
       return res.status(404).json({ message: 'News not found.' });
@@ -117,9 +96,7 @@ const deleteNews = async (req, res) => {
     }
 
     // Then, delete the news item from the database
-    await prisma.news.delete({
-      where: { id: parseInt(id) },
-    });
+    await News.destroy({ where: { id: parseInt(id) } });
 
     res.status(200).json({ message: 'News deleted successfully.' });
   } catch (error) {

@@ -1,4 +1,4 @@
-const prisma = require('../config/prisma');
+const { User } = require('../models');
 const jwt = require('jsonwebtoken');
 
 const inviteUser = async (req, res) => {
@@ -12,19 +12,17 @@ const inviteUser = async (req, res) => {
 
   try {
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'A user with this email already exists.' });
     }
 
     // Create user with pending status
-    const user = await prisma.user.create({
-      data: {
-        email,
-        role,
-        status: 'pending',
-        invitedBy: inviterId,
-      },
+    const user = await User.create({
+      email,
+      role,
+      status: 'pending',
+      invitedBy: inviterId,
     });
 
     // Create a special invitation token

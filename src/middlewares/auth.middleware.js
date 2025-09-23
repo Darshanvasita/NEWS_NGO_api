@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const prisma = require('../config/prisma');
+const { User } = require('../models');
 
 const verifyToken = async (req, res, next) => {
   let token;
@@ -12,10 +12,10 @@ const verifyToken = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // Get user from the token
-      req.user = await prisma.user.findUnique({
-        where: { id: decoded.id },
-        select: { id: true, email: true, role: true, status: true },
+      const user = await User.findByPk(decoded.id, {
+        attributes: ['id', 'email', 'role', 'status'],
       });
+      req.user = user ? user.get({ plain: true }) : null;
 
       if (!req.user || req.user.status !== 'active') {
         return res.status(401).json({ message: 'Not authorized, user not found or inactive' });
