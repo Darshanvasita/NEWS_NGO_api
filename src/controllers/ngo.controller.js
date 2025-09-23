@@ -1,4 +1,4 @@
-const prisma = require('../config/prisma');
+const { Story, Gallery, Donation, User } = require('../models');
 
 // --- Stories ---
 
@@ -10,12 +10,10 @@ const createStory = async (req, res) => {
   }
 
   try {
-    const story = await prisma.story.create({
-      data: {
-        title,
-        description,
-        imageUrl: req.file.path,
-      },
+    const story = await Story.create({
+      title,
+      description,
+      imageUrl: req.file.path,
     });
     res.status(201).json(story);
   } catch (error) {
@@ -26,10 +24,8 @@ const createStory = async (req, res) => {
 
 const getAllStories = async (req, res) => {
   try {
-    const stories = await prisma.story.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
+    const stories = await Story.findAll({
+      order: [['createdAt', 'DESC']],
     });
     res.status(200).json(stories);
   } catch (error) {
@@ -53,12 +49,10 @@ const createGalleryItem = async (req, res) => {
   }
 
   try {
-    const galleryItem = await prisma.gallery.create({
-      data: {
-        type,
-        caption,
-        url: req.file.path,
-      },
+    const galleryItem = await Gallery.create({
+      type,
+      caption,
+      url: req.file.path,
     });
     res.status(201).json(galleryItem);
   } catch (error) {
@@ -69,10 +63,8 @@ const createGalleryItem = async (req, res) => {
 
 const getAllGalleryItems = async (req, res) => {
   try {
-    const galleryItems = await prisma.gallery.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
+    const galleryItems = await Gallery.findAll({
+      order: [['createdAt', 'DESC']],
     });
     res.status(200).json(galleryItems);
   } catch (error) {
@@ -94,14 +86,11 @@ const createDonation = async (req, res) => {
   // 4. On successful verification, create the donation record.
 
   try {
-    const donation = await prisma.donation.create({
-      data: {
-        amount: parseFloat(amount),
-        userId,
-        // Mocked payment details
-        paymentId: `mock_payment_${Date.now()}`,
-        status: 'success',
-      },
+    const donation = await Donation.create({
+      amount: parseFloat(amount),
+      userId,
+      paymentId: `mock_payment_${Date.now()}`,
+      status: 'success',
     });
     res.status(201).json(donation);
   } catch (error) {
@@ -115,23 +104,12 @@ const getAllDonations = async (req, res) => {
   const skip = (page - 1) * limit;
 
   try {
-    const donations = await prisma.donation.findMany({
-      skip: parseInt(skip),
-      take: parseInt(limit),
-      orderBy: {
-        createdAt: 'desc',
-      },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-      },
+    const { rows: donations, count: totalDonations } = await Donation.findAndCountAll({
+      offset: parseInt(skip),
+      limit: parseInt(limit),
+      order: [['createdAt', 'DESC']],
+      include: [{ model: User, as: 'user', attributes: ['name', 'email'] }],
     });
-
-    const totalDonations = await prisma.donation.count();
     res.status(200).json({
       data: donations,
       totalPages: Math.ceil(totalDonations / limit),

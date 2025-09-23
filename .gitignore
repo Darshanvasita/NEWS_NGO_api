@@ -87,10 +87,5 @@ build/
 .env.production
 .env.development
 
-# Prisma
-prisma/generated/
-prisma/migrations/*.sql
-prisma/dev.db
-prisma/dev.db-journal
-
-/generated/prisma
+# Prisma (removed)
+# prisma/

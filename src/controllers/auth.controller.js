@@ -1,4 +1,4 @@
-const prisma = require('../config/prisma');
+const { User } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -6,21 +6,19 @@ const register = async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: 'user', // Default role for normal registration
-        status: 'active',
-      },
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: 'user',
+      status: 'active',
     });
 
     res.status(201).json({ message: 'User created successfully', userId: user.id });
@@ -33,7 +31,7 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await User.findOne({ where: { email } });
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -69,7 +67,7 @@ const acceptInvite = async (req, res) => {
     }
 
     // Find user by ID from token
-    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+    const user = await User.findByPk(decoded.userId);
 
     // Check if user exists and is pending
     if (!user || user.status !== 'pending') {
@@ -78,14 +76,10 @@ const acceptInvite = async (req, res) => {
 
     // Hash password and update user
     const hashedPassword = await bcrypt.hash(password, 10);
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        name,
-        password: hashedPassword,
-        status: 'active',
-      },
-    });
+    user.name = name;
+    user.password = hashedPassword;
+    user.status = 'active';
+    const updatedUser = await user.save();
 
     // Optionally, log the user in immediately
     const sessionToken = jwt.sign({ id: updatedUser.id, role: updatedUser.role }, process.env.JWT_SECRET, {

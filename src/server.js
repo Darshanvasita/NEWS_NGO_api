@@ -14,6 +14,7 @@ const authRoutes = require('./routes/auth.routes');
 const adminRoutes = require('./routes/admin.routes');
 const newsRoutes = require('./routes/news.routes');
 const ngoRoutes = require('./routes/ngo.routes');
+const { sequelize } = require('./models');
 
 app.get('/', (req, res) => {
   res.send('Server is running!');
@@ -30,6 +31,17 @@ app.use('/api/ngo', ngoRoutes);
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+async function start() {
+  try {
+    await sequelize.authenticate();
+    await sequelize.sync();
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
+}
+
+start();
