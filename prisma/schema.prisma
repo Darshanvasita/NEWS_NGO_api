@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  admin
+  editor
+  reporter
+  user
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String?
+  email     String   @unique
+  password  String?
+  role      Role     @default(user)
+  invitedBy Int?
+  status    String   @default("pending") // pending, active, inactive
+  createdAt DateTime @default(now())
+
+  news      News[]
+  donations Donation[]
+}
+
+model News {
+  id        Int      @id @default(autoincrement())
+  title     String
+  date      DateTime
+  pdfUrl    String   // Cloudinary link
+  authorId  Int?
+  createdAt DateTime @default(now())
+
+  author    User?    @relation(fields: [authorId], references: [id])
+}
+
+model Story {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  imageUrl    String   // Cloudinary link
+  createdAt   DateTime @default(now())
+}
+
+model Gallery {
+  id        Int      @id @default(autoincrement())
+  type      String   // "photo" | "video"
+  url       String
+  caption   String?
+  createdAt DateTime @default(now())
+}
+
+model Donation {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  amount    Float
+  paymentId String
+  status    String   // success, failed
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+}
