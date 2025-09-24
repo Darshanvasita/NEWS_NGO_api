@@ -12,6 +12,10 @@ const swaggerDefinition = {
       url: `http://localhost:${process.env.PORT || 3000}`,
       description: 'Development server',
     },
+    {
+       url: `https://news-ngo-api.onrender.com || http://localhost:3000`,
+      description: 'Live server',
+    }
   ],
   components: {
     securitySchemes: {
