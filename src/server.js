@@ -35,17 +35,19 @@ app.use("/api/ngo", ngoRoutes);
 
 const PORT = process.env.PORT || 3000;
 
-async function start() {
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+async function connectToDb() {
   try {
     await sequelize.authenticate();
+    console.log("Database connection has been established successfully.");
     await sequelize.sync();
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
+    console.log("Database synced successfully.");
   } catch (err) {
-    console.error("Failed to start server:", err);
-    process.exit(1);
+    console.error("Unable to connect to the database:", err);
   }
 }
 
-start();
+connectToDb();
