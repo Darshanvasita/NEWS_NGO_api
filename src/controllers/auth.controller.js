@@ -89,6 +89,9 @@ const acceptInvite = async (req, res) => {
     res.status(200).json({ message: 'Account activated successfully!', token: sessionToken });
 
   } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({ message: 'Invitation link has expired.' });
+    }
     if (error instanceof jwt.JsonWebTokenError) {
       return res.status(401).json({ message: 'Invalid or expired invitation link.' });
     }
