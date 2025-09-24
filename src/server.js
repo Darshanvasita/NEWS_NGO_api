@@ -4,7 +4,10 @@ const path = require("path");
 
 // Load environment from project root config.env explicitly so cwd differences
 // (CI/deploy) don't prevent env variables from being found.
-require("dotenv").config({ path: path.resolve(__dirname, "..", "config.env") });
+// Only load config.env in non-production environments
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config({ path: path.resolve(__dirname, "..", "config.env") });
+}
 
 const app = express();
 
@@ -47,6 +50,7 @@ async function connectToDb() {
     console.log("Database synced successfully.");
   } catch (err) {
     console.error("Unable to connect to the database:", err);
+    process.exit(1);
   }
 }
 
