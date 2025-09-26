@@ -7,6 +7,13 @@ let sequelize;
 if (databaseUrl && databaseUrl.startsWith("postgres")) {
   sequelize = new Sequelize(databaseUrl, {
     dialect: "postgres",
+    protocol: "postgres",
+    dialectOptions: {
+      ssl: {
+        require: true,
+        rejectUnauthorized: false, // Required for services like Render
+      },
+    },
     logging: false,
   });
 } else {
