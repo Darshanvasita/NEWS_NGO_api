@@ -20,6 +20,7 @@ const swaggerSpec = require("./config/swagger");
 const authRoutes = require("./routes/auth.routes");
 const adminRoutes = require("./routes/admin.routes");
 const newsRoutes = require("./routes/news.routes");
+const enewspaperRoutes = require("./routes/enewspaper.routes");
 const ngoRoutes = require("./routes/ngo.routes");
 const { sequelize } = require("./models");
 
@@ -34,19 +35,16 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/news", newsRoutes);
+app.use("/api/enewspapers", enewspaperRoutes);
 app.use("/api/ngo", ngoRoutes);
 
 const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
 
 async function connectToDb() {
   try {
     await sequelize.authenticate();
     console.log("Database connection has been established successfully.");
-    await sequelize.sync();
+    await sequelize.sync({ alter: true });
     console.log("Database synced successfully.");
   } catch (err) {
     console.error("Unable to connect to the database:", err);
@@ -54,4 +52,11 @@ async function connectToDb() {
   }
 }
 
-connectToDb();
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+  connectToDb();
+}
+
+module.exports = { app, connectToDb };
