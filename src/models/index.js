@@ -55,6 +55,7 @@ User.hasMany(Donation, { foreignKey: 'userId', as: 'donations' });
 Donation.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 const ENewspaper = require('./enewspaper.model')(sequelize);
+const Subscription = require('./subscription.model')(sequelize);
 
 User.hasMany(ENewspaper, { foreignKey: 'userId', as: 'enewspapers' });
 ENewspaper.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -67,5 +68,6 @@ module.exports = {
   Gallery,
   Donation,
   ENewspaper,
+  Subscription,
 };
 

@@ -22,6 +22,7 @@ const adminRoutes = require("./routes/admin.routes");
 const newsRoutes = require("./routes/news.routes");
 const enewspaperRoutes = require("./routes/enewspaper.routes");
 const ngoRoutes = require("./routes/ngo.routes");
+const subscriptionRoutes = require("./routes/subscription.routes");
 const { sequelize } = require("./models");
 
 app.get("/", (req, res) => {
@@ -37,6 +38,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/enewspapers", enewspaperRoutes);
 app.use("/api/ngo", ngoRoutes);
+app.use("/api/subscribe", subscriptionRoutes);
 
 const PORT = process.env.PORT || 3000;
 
