@@ -1,26 +1,22 @@
 const { ENewspaper, User } = require('../models');
 const { Op } = require('sequelize');
-const cloudinary = require('cloudinary').v2;
-
-// Helper function to extract public_id from Cloudinary URL
-const getPublicId = (url) => {
-  const parts = url.split('/');
-  const versionIndex = parts.findIndex(part => part.startsWith('v'));
-  if (versionIndex === -1) return null;
-  const publicIdWithFormat = parts.slice(versionIndex + 1).join('/');
-  const publicId = publicIdWithFormat.substring(0, publicIdWithFormat.lastIndexOf('.')) || publicIdWithFormat;
-  return publicId;
-};
+const fs = require('fs');
+const path = require('path');
 
 // Upload a new E-Newspaper
 exports.uploadENewspaper = async (req, res) => {
   try {
     const { publishDate } = req.body;
     const userId = req.user.id;
-    const filePath = req.file.path;
+    
+    if (!req.file) {
+      return res.status(400).json({ message: 'File is required' });
+    }
+    
+    const filePath = `/uploads/${req.file.filename}`;
 
-    if (!publishDate || !filePath) {
-      return res.status(400).json({ message: 'Publish date and file are required' });
+    if (!publishDate) {
+      return res.status(400).json({ message: 'Publish date is required' });
     }
 
     const enewspaper = await ENewspaper.create({
@@ -99,10 +95,10 @@ exports.deleteENewspaper = async (req, res) => {
             return res.status(404).json({ message: 'E-Newspaper not found' });
         }
 
-        // Delete file from Cloudinary
-        const publicId = getPublicId(enewspaper.filePath);
-        if (publicId) {
-            await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
+        // Delete file from local storage
+        const filePath = path.join(__dirname, '..', 'uploads', path.basename(enewspaper.filePath));
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
         }
 
         await enewspaper.destroy();

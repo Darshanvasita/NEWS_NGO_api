@@ -68,8 +68,8 @@ const getNewsById = async (req, res) => {
     }
 
     if (newsItem.status === 'published') {
-        newsItem.viewCount += 1;
-        await newsItem.save();
+      newsItem.viewCount += 1;
+      await newsItem.save();
     }
 
     res.status(200).json(newsItem);
@@ -80,53 +80,53 @@ const getNewsById = async (req, res) => {
 };
 
 const updateNews = async (req, res) => {
-    const { id } = req.params;
-    const { title, content, tags } = req.body;
-    const userId = req.user.id;
-    const userRole = req.user.role;
+  const { id } = req.params;
+  const { title, content, tags } = req.body;
+  const userId = req.user.id;
+  const userRole = req.user.role;
 
-    try {
-      const newsItem = await News.findByPk(parseInt(id));
+  try {
+    const newsItem = await News.findByPk(parseInt(id));
 
-      if (!newsItem) {
-        return res.status(404).json({ message: 'News not found.' });
-      }
-
-      if (userRole === 'reporter' && (newsItem.authorId !== userId || !['draft', 'rejected'].includes(newsItem.status))) {
-        return res.status(403).json({ message: 'Access denied. You can only edit your own news in draft or rejected status.' });
-      }
-
-      const latestVersion = await NewsVersion.findOne({
-          where: { newsId: newsItem.id },
-          order: [['version', 'DESC']],
-      });
-
-      const currentVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
-
-      await NewsVersion.create({
-        newsId: newsItem.id,
-        title: newsItem.title,
-        content: newsItem.content,
-        pdfUrl: newsItem.pdfUrl,
-        tags: newsItem.tags,
-        version: currentVersionNumber,
-      });
-
-      newsItem.title = title || newsItem.title;
-      newsItem.content = content || newsItem.content;
-      newsItem.tags = tags || newsItem.tags;
-
-      if (newsItem.status === 'published' || newsItem.status === 'rejected') {
-          newsItem.status = 'draft';
-      }
-
-      await newsItem.save();
-
-      res.status(200).json({ message: 'News updated successfully.', news: newsItem });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Something went wrong while updating the news.', error: error.message });
+    if (!newsItem) {
+      return res.status(404).json({ message: 'News not found.' });
     }
+
+    if (userRole === 'reporter' && (newsItem.authorId !== userId || !['draft', 'rejected'].includes(newsItem.status))) {
+      return res.status(403).json({ message: 'Access denied. You can only edit your own news in draft or rejected status.' });
+    }
+
+    const latestVersion = await NewsVersion.findOne({
+      where: { newsId: newsItem.id },
+      order: [['version', 'DESC']],
+    });
+
+    const currentVersionNumber = latestVersion ? latestVersion.version + 1 : 1;
+
+    await NewsVersion.create({
+      newsId: newsItem.id,
+      title: newsItem.title,
+      content: newsItem.content,
+      pdfUrl: newsItem.pdfUrl,
+      tags: newsItem.tags,
+      version: currentVersionNumber,
+    });
+
+    newsItem.title = title || newsItem.title;
+    newsItem.content = content || newsItem.content;
+    newsItem.tags = tags || newsItem.tags;
+
+    if (newsItem.status === 'published' || newsItem.status === 'rejected') {
+      newsItem.status = 'draft';
+    }
+
+    await newsItem.save();
+
+    res.status(200).json({ message: 'News updated successfully.', news: newsItem });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Something went wrong while updating the news.', error: error.message });
+  }
 };
 
 const deleteNews = async (req, res) => {

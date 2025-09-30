@@ -13,6 +13,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from the uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
 const authRoutes = require("./routes/auth.routes");
@@ -60,7 +63,6 @@ async function start() {
 }
 
 // Start the server only if this file is run directly (e.g., `node src/server.js`)
-// This prevents the server from starting automatically when imported in tests.
 if (require.main === module) {
   start();
 }

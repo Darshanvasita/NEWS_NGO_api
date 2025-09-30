@@ -1,4 +1,6 @@
 const { Story, Gallery, Donation, User } = require('../models');
+const fs = require('fs');
+const path = require('path');
 
 // --- Stories ---
 
@@ -13,7 +15,7 @@ const createStory = async (req, res) => {
     const story = await Story.create({
       title,
       description,
-      imageUrl: req.file.path,
+      imageUrl: `/uploads/${req.file.filename}`,
     });
     res.status(201).json(story);
   } catch (error) {
@@ -52,7 +54,7 @@ const createGalleryItem = async (req, res) => {
     const galleryItem = await Gallery.create({
       type,
       caption,
-      url: req.file.path,
+      url: `/uploads/${req.file.filename}`,
     });
     res.status(201).json(galleryItem);
   } catch (error) {
