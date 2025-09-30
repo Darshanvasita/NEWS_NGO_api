@@ -1,47 +1,50 @@
 const { User } = require('../models');
 const jwt = require('jsonwebtoken');
+const { sendEmail } = require('../utils/email');
+const { getInviteEmailTemplate } = require('../utils/emailTemplates');
+const config =require('../config/config');
 
 const inviteUser = async (req, res) => {
   const { email, role } = req.body;
-  const inviterId = req.user.id;
 
   // Validate role
   if (!['editor', 'reporter'].includes(role)) {
-    return res.status(400).json({ message: "Invalid role. Can only invite 'editor' or 'reporter'." });
+    return res.status(400).json({ message: "Invalid role. Can only be 'editor' or 'reporter'." });
   }
 
   try {
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({ message: 'A user with this email already exists.' });
+      return res.status(409).json({ message: 'User with this email already exists.' });
     }
 
-    // Create user with pending status
+    // Create a user with a 'pending' status
     const user = await User.create({
       email,
       role,
       status: 'pending',
-      invitedBy: inviterId,
     });
 
-    // Create a special invitation token
+    // Generate an invitation token
     const invitationToken = jwt.sign(
-      { userId: user.id, type: 'invite' },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' } // Invite valid for 7 days
+      { userId: user.id, email: user.email },
+      config.jwt.secret,
+      { expiresIn: '7d' }
     );
 
-    const inviteLink = `${req.protocol}://${req.get('host')}/api/auth/accept-invite/${invitationToken}`;
+    // Construct the invitation link
+    const inviteLink = `${req.protocol}://${req.get('host')}/accept-invite?token=${invitationToken}`;
 
-    // TODO: Send email to the user with the invite link
-    // For now, we will log it and return it in the response for development
-    console.log(`Invite link for ${email}: ${inviteLink}`);
+    // Send the invitation email
+    const emailSubject = 'You are invited to News NGO';
+    const emailHtml = getInviteEmailTemplate(role, inviteLink);
+    await sendEmail(email, emailSubject, emailHtml);
 
-    res.status(201).json({ message: `Invite sent successfully to ${email}.`, inviteLink });
+    res.status(200).json({ message: `Invitation sent to ${email}.` });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Something went wrong', error: error.message });
+    console.error('Error inviting user:', error);
+    res.status(500).json({ message: 'Failed to send invitation.', error: error.message });
   }
 };
 
