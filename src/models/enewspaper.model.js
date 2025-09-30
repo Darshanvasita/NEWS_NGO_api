@@ -18,10 +18,6 @@ module.exports = (sequelize) => {
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: {
-        model: 'users',
-        key: 'id',
-      },
     },
   }, {
     tableName: 'enewspapers',

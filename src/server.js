@@ -2,10 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 
-// Load environment from project root config.env explicitly so cwd differences
-// (CI/deploy) don't prevent env variables from being found.
-// Only load config.env in non-production environments
-if (process.env.NODE_ENV !== "production") {
+// Only load config.env in development, not in test or production
+if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test") {
   require("dotenv").config({ path: path.resolve(__dirname, "..", "config.env") });
 }
 
@@ -26,15 +24,14 @@ const newsRoutes = require("./routes/news.routes");
 const enewspaperRoutes = require("./routes/enewspaper.routes");
 const ngoRoutes = require("./routes/ngo.routes");
 const { sequelize } = require("./models");
+const { startScheduler } = require("./services/scheduler.service");
 
 app.get("/", (req, res) => {
   res.send("Server is running!");
 });
 
-// Swagger UI
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
 // API Routes
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/news", newsRoutes);
@@ -43,23 +40,31 @@ app.use("/api/ngo", ngoRoutes);
 
 const PORT = process.env.PORT || 3000;
 
-async function connectToDb() {
+async function start() {
   try {
     await sequelize.authenticate();
     console.log("Database connection has been established successfully.");
+
+    // Use `alter: true` in dev, but consider more robust migration strategies for prod
     await sequelize.sync({ alter: true });
     console.log("Database synced successfully.");
+
+    const server = app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+      if (process.env.NODE_ENV !== 'test') {
+        startScheduler();
+      }
+    });
+    return server;
   } catch (err) {
-    console.error("Unable to connect to the database:", err);
-    process.exit(1);
+    console.error("Unable to start the application:", err);
+    throw err; // Re-throw the error for the caller to handle
   }
 }
 
+// Start the server only if this file is run directly (e.g., `node src/server.js`)
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-  connectToDb();
+  start();
 }
 
-module.exports = { app, connectToDb };
+module.exports = { app, start };
