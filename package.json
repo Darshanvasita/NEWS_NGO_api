@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "src/server.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --runInBand",
     "dev": "nodemon src/server.js",
     "db:sync": "node -e \"require('./src/models').sequelize.sync({ alter: true }).then(()=>{console.log('synced')}).catch(e=>{console.error(e); process.exit(1)})\""
   },
