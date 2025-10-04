@@ -87,5 +87,3 @@ build/
 .env.production
 .env.development
 
-# Prisma (removed)
-# prisma/
