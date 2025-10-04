@@ -1,5 +1,5 @@
 const express = require('express');
-const { createSubscription } = require('../controllers/subscription.controller');
+const { subscribe, verifyOtp, unsubscribe } = require('../controllers/subscription.controller');
 
 const router = express.Router();
 
@@ -14,7 +14,7 @@ const router = express.Router();
  * @swagger
  * /api/subscribe:
  *   post:
- *     summary: Subscribe to the newsletter
+ *     summary: Initiate subscription and send OTP
  *     tags: [Subscription]
  *     requestBody:
  *       required: true
@@ -28,15 +28,66 @@ const router = express.Router();
  *               email:
  *                 type: string
  *                 format: email
- *                 description: The email address to subscribe.
+ *     responses:
+ *       '200':
+ *         description: OTP sent successfully
+ *       '400':
+ *         description: Bad request
+ *       '409':
+ *         description: Email already subscribed
+ */
+router.post('/', subscribe);
+
+/**
+ * @swagger
+ * /api/verify-otp:
+ *   post:
+ *     summary: Verify OTP and complete subscription
+ *     tags: [Subscription]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               otp:
+ *                 type: string
  *     responses:
  *       '201':
  *         description: Subscription successful
  *       '400':
- *         description: Bad request (e.g., missing email, invalid format)
- *       '409':
- *         description: This email is already subscribed
+ *         description: Invalid OTP or expired
  */
-router.post('/', createSubscription);
+router.post('/verify-otp', verifyOtp);
+
+/**
+ * @swagger
+ * /api/unsubscribe:
+ *   get:
+ *     summary: Unsubscribe from the newsletter
+ *     tags: [Subscription]
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The email to unsubscribe.
+ *     responses:
+ *       '200':
+ *         description: Unsubscribed successfully
+ *       '400':
+ *         description: Email is required
+ *       '404':
+ *         description: Email not found
+ */
+router.get('/unsubscribe', unsubscribe);
 
 module.exports = router;

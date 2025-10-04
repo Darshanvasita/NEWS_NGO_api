@@ -25,7 +25,7 @@ const enewspaperRoutes = require("./routes/enewspaper.routes");
 const ngoRoutes = require("./routes/ngo.routes");
 const subscriptionRoutes = require("./routes/subscription.routes");
 const { sequelize } = require("./models");
-const { startScheduler } = require("./services/scheduler.service");
+const schedulerService = require("./services/scheduler.service");
 
 app.get("/", (req, res) => {
   res.send("Server is running!");
@@ -54,7 +54,7 @@ async function start() {
     const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       if (process.env.NODE_ENV !== 'test') {
-        startScheduler();
+        schedulerService.startScheduler();
       }
     });
     return server;

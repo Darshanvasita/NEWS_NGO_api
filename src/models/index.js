@@ -11,7 +11,8 @@ db.ENewspaper = require('./enewspaper.model')(sequelize);
 db.Story = require('./story.model')(sequelize);
 db.Gallery = require('./gallery.model')(sequelize);
 db.Donation = require('./donation.model')(sequelize);
-db.Subscription = require('./subscription.model')(sequelize); // Added from feature branch
+db.Subscriber = require('./subscriber.model')(sequelize);
+db.SubscriptionTemp = require('./subscriptionTemp.model')(sequelize);
 
 // ================= Associations ================= //
 
@@ -30,14 +31,6 @@ db.Donation.belongsTo(db.User, { as: 'user', foreignKey: 'userId' });
 // User <-> ENewspaper
 db.User.hasMany(db.ENewspaper, { foreignKey: 'userId', as: 'enewspapers' });
 db.ENewspaper.belongsTo(db.User, { as: 'user', foreignKey: 'userId' });
-
-// Subscription <-> User (if needed)
-db.User.hasMany(db.Subscription, { foreignKey: 'userId', as: 'subscriptions' });
-db.Subscription.belongsTo(db.User, { as: 'user', foreignKey: 'userId' });
-
-// Subscription <-> ENewspaper (if required)
-db.ENewspaper.hasMany(db.Subscription, { foreignKey: 'enewspaperId', as: 'subscriptions' });
-db.Subscription.belongsTo(db.ENewspaper, { as: 'enewspaper', foreignKey: 'enewspaperId' });
 
 // ================================================= //
 
