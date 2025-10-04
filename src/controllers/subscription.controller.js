@@ -1,5 +1,5 @@
 const { log } = require("console");
-const { Subscriber, SubscriptionTemp } = require("../models");
+const { Subscriber } = require("../models");
 const { sendOtpEmail, sendWelcomeEmail } = require("../services/mail.service");
 const crypto = require("crypto");
 
@@ -24,7 +24,7 @@ const subscribe = async (req, res) => {
     const expires_at = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
 
     // Store OTP in temp table
-    await SubscriptionTemp.create({ email, otp, expires_at });
+    await Subscriber.create({ email, otp, expires_at });
 
     // Send OTP email
     await sendOtpEmail(email, otp);
@@ -42,6 +42,8 @@ const subscribe = async (req, res) => {
   }
 };
 const verifyOtp = async (req, res) => {
+  console.log("Verifying OTP with data:", req.body);
+
   const { email, otp } = req.body;
 
   if (!email || !otp) {
@@ -49,7 +51,7 @@ const verifyOtp = async (req, res) => {
   }
 
   try {
-    const tempSub = await SubscriptionTemp.findOne({ where: { email } });
+    const tempSub = await Subscriber.findOne({ where: { email } });
 
     if (!tempSub) {
       return res

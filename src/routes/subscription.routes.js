@@ -69,7 +69,8 @@ router.post("/", subscribe);
  *       '400':
  *         description: Invalid OTP or expired
  */
-router.post("/verify", verifyOtp);
+router.post("/verify-otp", verifyOtp);
+console.log("Subscription routes loaded.");
 
 /**
  * @swagger
