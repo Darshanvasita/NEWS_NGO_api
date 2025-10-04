@@ -1,5 +1,9 @@
-const express = require('express');
-const { subscribe, verifyOtp, unsubscribe } = require('../controllers/subscription.controller');
+const express = require("express");
+const {
+  subscribe,
+  verifyOtp,
+  unsubscribe,
+} = require("../controllers/subscription.controller");
 
 const router = express.Router();
 
@@ -36,7 +40,7 @@ const router = express.Router();
  *       '409':
  *         description: Email already subscribed
  */
-router.post('/', subscribe);
+router.post("/", subscribe);
 
 /**
  * @swagger
@@ -65,7 +69,7 @@ router.post('/', subscribe);
  *       '400':
  *         description: Invalid OTP or expired
  */
-router.post('/verify-otp', verifyOtp);
+router.post("/verify", verifyOtp);
 
 /**
  * @swagger
@@ -88,6 +92,6 @@ router.post('/verify-otp', verifyOtp);
  *       '404':
  *         description: Email not found
  */
-router.get('/unsubscribe', unsubscribe);
+router.get("/unsubscribe", unsubscribe);
 
 module.exports = router;
