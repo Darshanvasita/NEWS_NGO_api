@@ -1,8 +1,9 @@
 const sequelize = require('../config/sequelize');
+const { Sequelize } = require('sequelize');
 
 const db = {};
 
-// Import all models and attach them to the db object
+// Import models
 db.User = require('./user.model')(sequelize);
 db.News = require('./news.model')(sequelize);
 db.NewsVersion = require('./newsVersion.model')(sequelize);
@@ -10,8 +11,10 @@ db.ENewspaper = require('./enewspaper.model')(sequelize);
 db.Story = require('./story.model')(sequelize);
 db.Gallery = require('./gallery.model')(sequelize);
 db.Donation = require('./donation.model')(sequelize);
+db.Subscription = require('./subscription.model')(sequelize); // Added from feature branch
 
-// Once all models are loaded, define associations
+// ================= Associations ================= //
+
 // User <-> News
 db.User.hasMany(db.News, { foreignKey: 'authorId', as: 'news' });
 db.News.belongsTo(db.User, { as: 'author', foreignKey: 'authorId' });
@@ -28,7 +31,17 @@ db.Donation.belongsTo(db.User, { as: 'user', foreignKey: 'userId' });
 db.User.hasMany(db.ENewspaper, { foreignKey: 'userId', as: 'enewspapers' });
 db.ENewspaper.belongsTo(db.User, { as: 'user', foreignKey: 'userId' });
 
+// Subscription <-> User (if needed)
+db.User.hasMany(db.Subscription, { foreignKey: 'userId', as: 'subscriptions' });
+db.Subscription.belongsTo(db.User, { as: 'user', foreignKey: 'userId' });
+
+// Subscription <-> ENewspaper (if required)
+db.ENewspaper.hasMany(db.Subscription, { foreignKey: 'enewspaperId', as: 'subscriptions' });
+db.Subscription.belongsTo(db.ENewspaper, { as: 'enewspaper', foreignKey: 'enewspaperId' });
+
+// ================================================= //
+
 db.sequelize = sequelize;
-db.Sequelize = require('sequelize');
+db.Sequelize = Sequelize;
 
 module.exports = db;
