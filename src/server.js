@@ -25,6 +25,7 @@ const enewspaperRoutes = require("./routes/enewspaper.routes");
 const ngoRoutes = require("./routes/ngo.routes");
 const { sequelize } = require("./models");
 const { startScheduler } = require("./services/scheduler.service");
+const { testEmailConfig } = require("./utils/email");
 
 app.get("/", (req, res) => {
   res.send("Server is running!");
@@ -48,6 +49,15 @@ async function start() {
     // Use `alter: true` in dev, but consider more robust migration strategies for prod
     await sequelize.sync({ alter: true });
     console.log("Database synced successfully.");
+
+    // Verify email configuration before starting the server
+    if (process.env.NODE_ENV !== 'test') {
+      const isEmailConfigValid = await testEmailConfig();
+      if (!isEmailConfigValid) {
+        console.error("Application startup failed due to invalid email configuration. Please check your .env file.");
+        process.exit(1); // Exit with a failure code
+      }
+    }
 
     const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
