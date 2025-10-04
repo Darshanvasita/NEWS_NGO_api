@@ -26,6 +26,8 @@ const ngoRoutes = require("./routes/ngo.routes");
 const subscriptionRoutes = require("./routes/subscription.routes");
 const { sequelize } = require("./models");
 const { startScheduler } = require("./services/scheduler.service");
+// Initialize email service
+const { testEmailConfiguration } = require("./services/email.service");
 
 app.get("/", (req, res) => {
   res.send("Server is running!");
@@ -50,6 +52,9 @@ async function start() {
     // Use `alter: true` in dev, but consider more robust migration strategies for prod
     await sequelize.sync({ alter: true });
     console.log("Database synced successfully.");
+
+    // Test email configuration
+    await testEmailConfiguration();
 
     const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
