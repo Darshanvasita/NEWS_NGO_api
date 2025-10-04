@@ -1,5 +1,5 @@
 const express = require('express');
-const { inviteUser } = require('../controllers/admin.controller');
+const { inviteUser, testEmailConfig } = require('../controllers/admin.controller');
 const { verifyToken, isAdmin } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
@@ -59,5 +59,8 @@ const router = express.Router();
  *         description: Something went wrong
  */
 router.post('/invite', verifyToken, isAdmin, inviteUser);
+
+// Test email configuration endpoint
+router.get('/test-email', verifyToken, isAdmin, testEmailConfig);
 
 module.exports = router;
