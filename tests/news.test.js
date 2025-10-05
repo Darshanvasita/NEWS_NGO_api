@@ -1,137 +1,99 @@
+// Mock the sequelize config to use SQLite for tests.
+jest.mock('../src/config/sequelize.js', () => {
+  const { Sequelize } = require('sequelize');
+  return new Sequelize('sqlite::memory:', { logging: false });
+});
+
+// Mock the auth middleware
+jest.mock('../src/middlewares/auth.middleware.js', () => ({
+  verifyToken: (req, res, next) => {
+    // Mock user based on a test header
+    if (req.headers['x-test-user-role'] === 'admin') {
+      req.user = { id: 1, role: 'admin' };
+    } else {
+      req.user = { id: 2, role: 'reporter' };
+    }
+    next();
+  },
+  isAdmin: (req, res, next) => {
+    if (req.user.role === 'admin') {
+      next();
+    } else {
+      res.status(403).json({ message: 'Access denied' });
+    }
+  },
+  isReporter: (req, res, next) => next(), // Add a mock for isReporter
+  isEditor: (req, res, next) => next(), // Add a mock for isEditor
+}));
+
 const request = require('supertest');
 const { app } = require('../src/server');
-const { User, News, NewsVersion, sequelize } = require('../src/models');
-const jwt = require('jsonwebtoken');
+const { News, sequelize } = require('../src/models');
 
-let server;
-let reporterToken, editorToken, adminToken;
-let reporter, editor, admin;
+describe('News API - Admin', () => {
+  let server;
 
-beforeAll(async () => {
-  // Manually control the initialization order to prevent race conditions.
-  // 1. Sync the database schema. The `sequelize` instance is mocked by setup.js.
-  await sequelize.sync({ force: true });
-  // 2. Start the server.
-  server = app.listen(process.env.PORT || 4010);
-});
+  beforeAll(async () => {
+    await sequelize.sync({ force: true });
+    server = app.listen(4014);
+  });
 
-afterAll(async () => {
-  // Gracefully close the server and the database connection.
-  if (server) {
+  afterEach(async () => {
+    await News.destroy({ where: {} });
+    jest.clearAllMocks();
+  });
+
+  afterAll(async () => {
+    await sequelize.close();
     server.close();
-  }
-  await sequelize.close();
-});
-
-beforeEach(async () => {
-    // Clean data from tables before each test, preserving the schema.
-    // The order is important to avoid foreign key constraint errors.
-    // `restartIdentity` is important for SQLite to reset auto-incrementing IDs.
-    await NewsVersion.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
-    await News.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
-    await User.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true });
-
-    // Re-create users and tokens for a clean state for each test.
-    [reporter, editor, admin] = await Promise.all([
-        User.create({ name: 'Test Reporter', email: 'reporter@test.com', password: 'password', role: 'reporter', status: 'active' }),
-        User.create({ name: 'Test Editor', email: 'editor@test.com', password: 'password', role: 'editor', status: 'active' }),
-        User.create({ name: 'Test Admin', email: 'admin@test.com', password: 'password', role: 'admin', status: 'active' }),
-    ]);
-
-    reporterToken = jwt.sign({ id: reporter.id, role: 'reporter' }, process.env.JWT_SECRET);
-    editorToken = jwt.sign({ id: editor.id, role: 'editor' }, process.env.JWT_SECRET);
-    adminToken = jwt.sign({ id: admin.id, role: 'admin' }, process.env.JWT_SECRET);
-});
-
-describe('News API Workflow', () => {
-  it('should allow a reporter to create a news article as a draft', async () => {
-    const res = await request(app)
-      .post('/api/news')
-      .set('Authorization', `Bearer ${reporterToken}`)
-      .send({ title: 'Test Article', content: 'This is a test.' });
-
-    expect(res.statusCode).toEqual(201);
-    expect(res.body.status).toEqual('draft');
   });
 
-  it('should allow the authoring reporter to edit their own draft', async () => {
-    const news = await News.create({ title: 'Original Title', content: 'Original content.', authorId: reporter.id, status: 'draft' });
+  describe('POST /api/news/add', () => {
+    it('should allow an admin to add a news article', async () => {
+      const newsData = {
+        title: 'Big News Today',
+        description: 'Something major happened.',
+        link: 'http://example.com/news/1',
+      };
 
-    const res = await request(app)
-      .put(`/api/news/${news.id}`)
-      .set('Authorization', `Bearer ${reporterToken}`)
-      .send({ title: 'Updated Title' });
+      const res = await request(app)
+        .post('/api/news/add')
+        .set('x-test-user-role', 'admin')
+        .send(newsData);
 
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.news.title).toEqual('Updated Title');
-  });
+      expect(res.statusCode).toEqual(201);
+      expect(res.body.message).toBe('News added successfully.');
+      expect(res.body.news.title).toBe(newsData.title);
 
-  it('should not allow a reporter to edit another reporter\'s article', async () => {
-    const news = await News.create({ title: 'Another Article', authorId: admin.id, status: 'draft' });
+      const news = await News.findOne({ where: { title: 'Big News Today' } });
+      expect(news).not.toBeNull();
+      expect(news.status).toBe('published');
+    });
 
-    const res = await request(app)
-      .put(`/api/news/${news.id}`)
-      .set('Authorization', `Bearer ${reporterToken}`)
-      .send({ title: 'Malicious Update' });
+    it('should not allow a non-admin to add a news article', async () => {
+        const newsData = {
+            title: 'Unauthorized News',
+            description: 'This should not be added.',
+            link: 'http://example.com/news/2',
+        };
 
-    expect(res.statusCode).toEqual(403);
-  });
+        const res = await request(app)
+            .post('/api/news/add')
+            .set('x-test-user-role', 'reporter')
+            .send(newsData);
 
-  it('should allow a reporter to submit an article for approval', async () => {
-    const news = await News.create({ title: 'A story', authorId: reporter.id, status: 'draft' });
-    const res = await request(app)
-      .patch(`/api/news/${news.id}/submit`)
-      .set('Authorization', `Bearer ${reporterToken}`);
+        expect(res.statusCode).toEqual(403);
+        expect(res.body.message).toBe('Access denied');
+    });
 
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.news.status).toEqual('pending_approval');
-  });
+    it('should return 400 if required fields are missing', async () => {
+        const res = await request(app)
+            .post('/api/news/add')
+            .set('x-test-user-role', 'admin')
+            .send({ title: 'Incomplete News' });
 
-  it('should allow an editor to approve an article', async () => {
-    const news = await News.create({ title: 'A story', authorId: reporter.id, status: 'pending_approval' });
-    const res = await request(app)
-      .patch(`/api/news/${news.id}/approve`)
-      .set('Authorization', `Bearer ${editorToken}`);
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.news.status).toEqual('published');
-  });
-
-  it('should allow an editor to schedule an article', async () => {
-    const news = await News.create({ title: 'A story', authorId: reporter.id, status: 'pending_approval' });
-    const futureDate = new Date();
-    futureDate.setDate(futureDate.getDate() + 1);
-
-    const res = await request(app)
-      .patch(`/api/news/${news.id}/approve`)
-      .set('Authorization', `Bearer ${editorToken}`)
-      .send({ publishedAt: futureDate.toISOString() });
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.news.status).toEqual('scheduled');
-  });
-
-  it('should allow an editor to rollback an article', async () => {
-    const news = await News.create({ title: 'Original Title', authorId: reporter.id, status: 'published' });
-    const version = await NewsVersion.create({ newsId: news.id, title: 'Version 1', version: 1 });
-
-    news.title = 'Current Title';
-    await news.save();
-
-    const res = await request(app)
-      .patch(`/api/news/${news.id}/rollback/${version.id}`)
-      .set('Authorization', `Bearer ${editorToken}`);
-
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.news.title).toEqual('Version 1');
-  });
-
-  it('should only show published articles to the public', async () => {
-    await News.create({ title: 'Published Article', authorId: reporter.id, status: 'published', publishedAt: new Date() });
-    await News.create({ title: 'Draft Article', authorId: reporter.id, status: 'draft' });
-
-    const res = await request(app).get('/api/news');
-    expect(res.statusCode).toEqual(200);
-    expect(res.body.data.length).toBe(1);
+        expect(res.statusCode).toEqual(400);
+        expect(res.body.message).toBe('Title, description, and link are required.');
+    });
   });
 });

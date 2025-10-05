@@ -305,6 +305,28 @@ const rollbackNews = async (req, res) => {
   }
 };
 
+const addNews = async (req, res) => {
+  const { title, description, link } = req.body;
+
+  if (!title || !description || !link) {
+    return res.status(400).json({ message: 'Title, description, and link are required.' });
+  }
+
+  try {
+    const news = await News.create({
+      title,
+      description,
+      link,
+      status: 'published',
+      publishedAt: new Date(),
+    });
+    res.status(201).json({ message: 'News added successfully.', news });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Something went wrong while adding news.', error: error.message });
+  }
+};
+
 module.exports = {
   createNews,
   getAllNews,
@@ -316,4 +338,5 @@ module.exports = {
   rejectNews,
   getNewsVersions,
   rollbackNews,
+  addNews,
 };

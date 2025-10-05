@@ -1,9 +1,9 @@
 const { Model, DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
-  class Subscription extends Model {}
+  class Subscriber extends Model {}
 
-  Subscription.init({
+  Subscriber.init({
     id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
@@ -20,10 +20,10 @@ module.exports = (sequelize) => {
     },
   }, {
     sequelize,
-    modelName: 'Subscription',
-    tableName: 'subscriptions',
+    modelName: 'Subscriber',
+    tableName: 'subscribers',
     timestamps: true,
   });
 
-  return Subscription;
+  return Subscriber;
 };

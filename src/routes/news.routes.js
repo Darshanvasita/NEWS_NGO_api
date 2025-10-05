@@ -1,5 +1,5 @@
 const express = require('express');
-const { createNews, getAllNews, getNewsById, deleteNews, updateNews, submitNews, approveNews, rejectNews, getNewsVersions, rollbackNews } = require('../controllers/news.controller');
+const { createNews, getAllNews, getNewsById, deleteNews, updateNews, submitNews, approveNews, rejectNews, getNewsVersions, rollbackNews, addNews } = require('../controllers/news.controller');
 const { verifyToken, isReporter, isAdmin, isEditor } = require('../middlewares/auth.middleware');
 const upload = require('../config/cloudinary');
 
@@ -308,5 +308,40 @@ router.get('/:id/versions', verifyToken, isEditor, getNewsVersions);
  *         description: News or version not found
  */
 router.patch('/:id/rollback/:versionId', verifyToken, isEditor, rollbackNews);
+
+/**
+ * @swagger
+ * /api/news/add:
+ *   post:
+ *     summary: Add a new news article for the newsletter
+ *     tags: [News]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - description
+ *               - link
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               link:
+ *                 type: string
+ *     responses:
+ *       '201':
+ *         description: News added successfully
+ *       '400':
+ *         description: Bad request
+ *       '403':
+ *         description: Access denied
+ */
+router.post('/add', verifyToken, isAdmin, addNews);
 
 module.exports = router;
