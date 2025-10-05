@@ -1,5 +1,12 @@
-const express = require('express');
-const { register, login, acceptInvite, logout } = require('../controllers/auth.controller');
+const express = require("express");
+const {
+  register,
+  login,
+  acceptInvite,
+  logout,
+  forgotPassword,
+  resetPassword,
+} = require("../controllers/auth.controller");
 
 const router = express.Router();
 
@@ -46,7 +53,7 @@ const router = express.Router();
  *       '500':
  *         description: Something went wrong
  */
-router.post('/register', register);
+router.post("/register", register);
 
 /**
  * @swagger
@@ -95,7 +102,7 @@ router.post('/register', register);
  *       '500':
  *         description: Something went wrong
  */
-router.post('/login', login);
+router.post("/login", login);
 
 /**
  * @swagger
@@ -146,7 +153,72 @@ router.post('/login', login);
  *       '500':
  *         description: Something went wrong
  */
-router.post('/accept-invite/:token', acceptInvite);
+router.post("/accept-invite/:token", acceptInvite);
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request password reset
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *     responses:
+ *       '200':
+ *         description: Password reset email sent
+ *       '404':
+ *         description: User not found
+ *       '500':
+ *         description: Something went wrong
+ */
+router.post("/forgot-password", forgotPassword);
+
+/**
+ * @swagger
+ * /api/auth/reset-password/{token}:
+ *   post:
+ *     summary: Reset password with token
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The password reset token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 format: password
+ *                 example: newpassword123
+ *     responses:
+ *       '200':
+ *         description: Password reset successful
+ *       '400':
+ *         description: Invalid or expired token
+ *       '500':
+ *         description: Something went wrong
+ */
+router.post("/reset-password/:token", resetPassword);
 
 /**
  * @swagger
@@ -162,6 +234,6 @@ router.post('/accept-invite/:token', acceptInvite);
  *       '401':
  *         description: Not authorized
  */
-router.post('/logout', logout);
+router.post("/logout", logout);
 
 module.exports = router;
