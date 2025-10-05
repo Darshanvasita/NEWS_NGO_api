@@ -44,7 +44,7 @@ router.post("/", subscribe);
 
 /**
  * @swagger
- * /api/verify-otp:
+ * /api/subscribe/verify-otp:
  *   post:
  *     summary: Verify OTP and complete subscription
  *     tags: [Subscription]
@@ -69,14 +69,14 @@ router.post("/", subscribe);
  *       '400':
  *         description: Invalid OTP or expired
  */
-router.get("/verify-otp", verifyOtp);
+// router.get("/verify-otp", verifyOtp);
 router.post("/verify-otp", verifyOtp);
 
 console.log("Subscription routes loaded.");
 
 /**
  * @swagger
- * /api/unsubscribe:
+ * /api/subscribe/unsubscribe:
  *   get:
  *     summary: Unsubscribe from the newsletter
  *     tags: [Subscription]

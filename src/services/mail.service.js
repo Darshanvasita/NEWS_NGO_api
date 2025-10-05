@@ -3,14 +3,14 @@ const nodemailer = require("nodemailer");
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
 const sendOtpEmail = async (email, otp) => {
   const mailOptions = {
-    from: process.env.SMTP_USER,
+    from: process.env.EMAIL_USER,
     to: email,
     subject: "Verify your Subscription (OTP Inside)",
     html: `
@@ -24,7 +24,7 @@ const sendOtpEmail = async (email, otp) => {
 
 const sendWelcomeEmail = async (email) => {
   const mailOptions = {
-    from: process.env.SMTP_USER,
+    from: process.env.EMAIL_USER,
     to: email,
     subject: "Welcome to Our Newsletter! 🎉",
     html: `
@@ -45,7 +45,7 @@ const sendNewsletterEmail = async (email, newsItems) => {
     .join('');
 
   const mailOptions = {
-    from: process.env.SMTP_USER,
+    from: process.env.EMAIL_USER,
     to: email,
     subject: '📰 Weekly Highlights from Your News Site',
     html: `
