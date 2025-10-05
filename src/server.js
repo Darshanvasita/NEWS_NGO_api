@@ -17,33 +17,36 @@ app.use(express.urlencoded({ extended: true }));
 app.use((req, res, next) => {
   const timestamp = new Date().toLocaleString();
   console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
-  
+
   // Log request body for POST/PUT requests
-  if (req.method === 'POST' || req.method === 'PUT') {
-    console.log('Request Body:', JSON.stringify(req.body, null, 2));
+  if (req.method === "POST" || req.method === "PUT") {
+    console.log("Request Body:", JSON.stringify(req.body, null, 2));
   }
-  
+
   // Log query parameters if they exist
   if (Object.keys(req.query).length > 0) {
-    console.log('Query Params:', JSON.stringify(req.query, null, 2));
+    console.log("Query Params:", JSON.stringify(req.query, null, 2));
   }
-  
+
   next();
 });
 
 // Serve static files from the uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 const swaggerUi = require("swagger-ui-express");
 const swaggerSpec = require("./config/swagger");
+
 const authRoutes = require("./routes/auth.routes");
 const adminRoutes = require("./routes/admin.routes");
 const newsRoutes = require("./routes/news.routes");
 const enewspaperRoutes = require("./routes/enewspaper.routes");
 const ngoRoutes = require("./routes/ngo.routes");
 const subscriptionRoutes = require("./routes/subscription.routes");
+
 const { sequelize } = require("./models");
 const schedulerService = require("./services/scheduler.service");
+const { testEmailConfiguration } = require("./services/email.service");
 
 app.get("/", (req, res) => {
   res.send("Server is running!");
@@ -69,12 +72,17 @@ async function start() {
     await sequelize.sync({ alter: true });
     console.log("Database synced successfully.");
 
+    // Test email configuration
+    await testEmailConfiguration();
+
     const server = app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
-      if (process.env.NODE_ENV !== 'test') {
+
+      if (process.env.NODE_ENV !== "test") {
         schedulerService.startScheduler();
       }
     });
+
     return server;
   } catch (err) {
     console.error("Unable to start the application:", err);
