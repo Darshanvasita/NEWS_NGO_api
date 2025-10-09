@@ -4,7 +4,9 @@ const path = require("path");
 
 // Only load config.env in development, not in test or production
 if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test") {
-  require("dotenv").config({ path: path.resolve(__dirname, "..", "config.env") });
+  require("dotenv").config({
+    path: path.resolve(__dirname, "..", "config.env"),
+  });
 }
 
 const app = express();
@@ -57,9 +59,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/news", newsRoutes);
-app.use("/api/enewspapers", enewspaperRoutes);
+app.use("/api/news/e-newspaper", enewspaperRoutes);
 app.use("/api/ngo", ngoRoutes);
-app.use("/api/subscribe", subscriptionRoutes);
+// app.use("/api/subscribe", subscriptionRoutes);
 
 const PORT = process.env.PORT || 3000;
 

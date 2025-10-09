@@ -1,7 +1,29 @@
-const express = require('express');
-const { createNews, getAllNews, getNewsById, deleteNews, updateNews, submitNews, approveNews, rejectNews, getNewsVersions, rollbackNews, addNews } = require('../controllers/news.controller');
-const { verifyToken, isReporter, isAdmin, isEditor } = require('../middlewares/auth.middleware');
-const upload = require('../config/cloudinary');
+const express = require("express");
+const {
+  createNews,
+  getAllNews,
+  getNewsById,
+  deleteNews,
+  updateNews,
+  submitNews,
+  approveNews,
+  rejectNews,
+  getNewsVersions,
+  rollbackNews,
+  addNews,
+} = require("../controllers/news.controller");
+const {
+  verifyToken,
+  isReporter,
+  isAdmin,
+  isEditor,
+} = require("../middlewares/auth.middleware");
+const {
+  subscribe,
+  verifyOtp,
+  unsubscribe,
+} = require("../controllers/subscription.controller");
+const upload = require("../config/cloudinary");
 
 const router = express.Router();
 
@@ -48,7 +70,7 @@ const router = express.Router();
  *       '403':
  *         description: Access denied
  */
-router.post('/', verifyToken, isReporter, upload.single('pdf'), createNews);
+router.post("/", verifyToken, isReporter, upload.single("pdf"), createNews);
 
 /**
  * @swagger
@@ -73,7 +95,7 @@ router.post('/', verifyToken, isReporter, upload.single('pdf'), createNews);
  *       '200':
  *         description: A list of news articles
  */
-router.get('/', getAllNews);
+router.get("/", getAllNews);
 
 /**
  * @swagger
@@ -94,7 +116,7 @@ router.get('/', getAllNews);
  *       '404':
  *         description: News not found
  */
-router.get('/:id', getNewsById);
+router.get("/:id", getNewsById);
 
 /**
  * @swagger
@@ -134,13 +156,22 @@ router.get('/:id', getNewsById);
  *       '404':
  *         description: News not found
  */
-router.put('/:id', verifyToken, (req, res, next) => {
-  if (req.user.role === 'reporter' || req.user.role === 'editor' || req.user.role === 'admin') {
-    next();
-  } else {
-    res.status(403).send({ message: 'Access denied' });
-  }
-}, updateNews);
+router.put(
+  "/:id",
+  verifyToken,
+  (req, res, next) => {
+    if (
+      req.user.role === "reporter" ||
+      req.user.role === "editor" ||
+      req.user.role === "admin"
+    ) {
+      next();
+    } else {
+      res.status(403).send({ message: "Access denied" });
+    }
+  },
+  updateNews
+);
 
 /**
  * @swagger
@@ -165,7 +196,7 @@ router.put('/:id', verifyToken, (req, res, next) => {
  *       '404':
  *         description: News not found
  */
-router.delete('/:id', verifyToken, isAdmin, deleteNews);
+router.delete("/:id", verifyToken, isAdmin, deleteNews);
 
 /**
  * @swagger
@@ -190,7 +221,7 @@ router.delete('/:id', verifyToken, isAdmin, deleteNews);
  *       '404':
  *         description: News not found
  */
-router.patch('/:id/submit', verifyToken, isReporter, submitNews);
+router.patch("/:id/submit", verifyToken, isReporter, submitNews);
 
 /**
  * @swagger
@@ -226,7 +257,7 @@ router.patch('/:id/submit', verifyToken, isReporter, submitNews);
  *       '404':
  *         description: News not found
  */
-router.patch('/:id/approve', verifyToken, isEditor, approveNews);
+router.patch("/:id/approve", verifyToken, isEditor, approveNews);
 
 /**
  * @swagger
@@ -251,7 +282,7 @@ router.patch('/:id/approve', verifyToken, isEditor, approveNews);
  *       '404':
  *         description: News not found
  */
-router.patch('/:id/reject', verifyToken, isEditor, rejectNews);
+router.patch("/:id/reject", verifyToken, isEditor, rejectNews);
 
 /**
  * @swagger
@@ -276,7 +307,7 @@ router.patch('/:id/reject', verifyToken, isEditor, rejectNews);
  *       '404':
  *         description: News not found
  */
-router.get('/:id/versions', verifyToken, isEditor, getNewsVersions);
+router.get("/:id/versions", verifyToken, isEditor, getNewsVersions);
 
 /**
  * @swagger
@@ -307,7 +338,7 @@ router.get('/:id/versions', verifyToken, isEditor, getNewsVersions);
  *       '404':
  *         description: News or version not found
  */
-router.patch('/:id/rollback/:versionId', verifyToken, isEditor, rollbackNews);
+router.patch("/:id/rollback/:versionId", verifyToken, isEditor, rollbackNews);
 
 /**
  * @swagger
@@ -342,6 +373,93 @@ router.patch('/:id/rollback/:versionId', verifyToken, isEditor, rollbackNews);
  *       '403':
  *         description: Access denied
  */
-router.post('/add', verifyToken, isAdmin, addNews);
+router.post("/add", verifyToken, isAdmin, addNews);
+
+/**
+ * @swagger
+ * /api/news/subscribe:
+ *   post:
+ *     summary: Initiate subscription and send OTP
+ *     tags: [Subscription]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       '200':
+ *         description: OTP sent successfully
+ *       '400':
+ *         description: Bad request
+ *       '409':
+ *         description: Email already subscribed
+ */
+
+router.post("/subscribe", subscribe);
+
+/**
+ * @swagger
+ * /api/news/subscribe/verify-otp:
+ *   post:
+ *     summary: Verify OTP and complete subscription
+ *     tags: [Subscription]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       '201':
+ *         description: Subscription successful
+ *       '400':
+ *         description: Invalid OTP or expired
+ */
+router.post("/verify-otp", verifyOtp);
+
+console.log("Subscription routes loaded.");
+
+/**
+ * @swagger
+ * /api/news/subscribe/unsubscribe:
+ *   get:
+ *     summary: Unsubscribe from the newsletter
+ *     tags: [Subscription]
+ *     parameters:
+ *       - in: query
+ *         name: email
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: The email to unsubscribe.
+ *     responses:
+ *       '200':
+ *         description: Unsubscribed successfully
+ *       '400':
+ *         description: Email is required
+ *       '404':
+ *         description: Email not found
+ */
+router.get("/unsubscribe", unsubscribe);
+
+// Mount e-newspaper routes under /api/news/E-news
+const enewspaperRoutes = require("./enewspaper.routes");
+router.use("/E-news", enewspaperRoutes);
 
 module.exports = router;

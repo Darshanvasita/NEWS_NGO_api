@@ -3,7 +3,12 @@ const { Op } = require('sequelize');
 const fs = require('fs');
 const path = require('path');
 
-// Upload a new E-Newspaper
+/**
+ * Upload a new E-Newspaper
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with created e-newspaper or error
+ */
 exports.uploadENewspaper = async (req, res) => {
   try {
     const { publishDate } = req.body;
@@ -31,7 +36,12 @@ exports.uploadENewspaper = async (req, res) => {
   }
 };
 
-// Get all E-Newspapers (for admin/editor)
+/**
+ * Get all E-Newspapers (for admin/editor)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with list of all e-newspapers or error
+ */
 exports.getAllENewspapers = async (req, res) => {
   try {
     const enewspapers = await ENewspaper.findAll({
@@ -44,7 +54,12 @@ exports.getAllENewspapers = async (req, res) => {
   }
 };
 
-// Get a single E-Newspaper by ID
+/**
+ * Get a single E-Newspaper by ID
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with e-newspaper details or error
+ */
 exports.getENewspaperById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -62,7 +77,12 @@ exports.getENewspaperById = async (req, res) => {
   }
 };
 
-// Update an E-Newspaper
+/**
+ * Update an E-Newspaper
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with updated e-newspaper or error
+ */
 exports.updateENewspaper = async (req, res) => {
     try {
         const { id } = req.params;
@@ -85,7 +105,12 @@ exports.updateENewspaper = async (req, res) => {
     }
 };
 
-// Delete an E-Newspaper
+/**
+ * Delete an E-Newspaper
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with success message or error
+ */
 exports.deleteENewspaper = async (req, res) => {
     try {
         const { id } = req.params;
@@ -109,7 +134,12 @@ exports.deleteENewspaper = async (req, res) => {
 };
 
 
-// Get all published E-Newspapers for the public
+/**
+ * Get all published E-Newspapers for the public
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @returns {Object} JSON response with list of published e-newspapers or error
+ */
 exports.getPublishedENewspapers = async (req, res) => {
   try {
     const { date } = req.query;
