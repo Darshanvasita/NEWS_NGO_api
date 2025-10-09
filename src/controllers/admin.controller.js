@@ -1,4 +1,4 @@
-const { User } = require("../models");
+const { User, ENewspaper } = require("../models");
 const jwt = require("jsonwebtoken");
 const { sendEmail } = require("../services/email.service");
 
@@ -334,8 +334,38 @@ const getPendingUsers = async (req, res) => {
   }
 };
 
+const uploadENewspaper = async (req, res) => {
+  const { title, publishDate, publishTime } = req.body;
+
+  if (!req.file) {
+    return res.status(400).json({ message: "PDF file is required." });
+  }
+
+  try {
+    const enewspaper = await ENewspaper.create({
+      title,
+      publishDate,
+      publishTime,
+      pdfPath: req.file.path, // Assuming Cloudinary provides a path
+      isPublished: false,
+      userId: req.user.id,
+    });
+
+    res.status(201).json({
+      message: "E-Newspaper uploaded and scheduled for publishing.",
+      enewspaper,
+    });
+  } catch (error) {
+    console.error("E-Newspaper upload error:", error);
+    res
+      .status(500)
+      .json({ message: "Something went wrong", error: error.message });
+  }
+};
+
 module.exports = {
   inviteUser,
   resendInvite,
   getPendingUsers,
+  uploadENewspaper,
 };

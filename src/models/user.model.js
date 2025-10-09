@@ -7,6 +7,7 @@ module.exports = (sequelize) => {
     email: { type: DataTypes.STRING, unique: true, allowNull: false },
     password: { type: DataTypes.STRING },
     role: { type: DataTypes.ENUM('admin', 'editor', 'reporter', 'user'), defaultValue: 'user', allowNull: false },
+    userType: { type: DataTypes.ENUM('NEWS', 'NGO') },
     invitedBy: { type: DataTypes.INTEGER },
     status: { type: DataTypes.STRING, defaultValue: 'pending', allowNull: false },
     createdAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW, allowNull: false },

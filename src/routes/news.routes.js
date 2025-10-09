@@ -1,6 +1,7 @@
 const express = require('express');
 const { createNews, getAllNews, getNewsById, deleteNews, updateNews, submitNews, approveNews, rejectNews, getNewsVersions, rollbackNews, addNews } = require('../controllers/news.controller');
-const { verifyToken, isReporter, isAdmin, isEditor } = require('../middlewares/auth.middleware');
+const { createSubscription, getSubscriptionStatus } = require('../controllers/subscription.controller');
+const { verifyToken, isReporter, isAdmin, isEditor, isNewsUser } = require('../middlewares/auth.middleware');
 const upload = require('../config/cloudinary');
 
 const router = express.Router();
@@ -48,7 +49,7 @@ const router = express.Router();
  *       '403':
  *         description: Access denied
  */
-router.post('/', verifyToken, isReporter, upload.single('pdf'), createNews);
+router.post('/', verifyToken, isNewsUser, isReporter, upload.single('pdf'), createNews);
 
 /**
  * @swagger
@@ -134,7 +135,7 @@ router.get('/:id', getNewsById);
  *       '404':
  *         description: News not found
  */
-router.put('/:id', verifyToken, (req, res, next) => {
+router.put('/:id', verifyToken, isNewsUser, (req, res, next) => {
   if (req.user.role === 'reporter' || req.user.role === 'editor' || req.user.role === 'admin') {
     next();
   } else {
@@ -165,7 +166,7 @@ router.put('/:id', verifyToken, (req, res, next) => {
  *       '404':
  *         description: News not found
  */
-router.delete('/:id', verifyToken, isAdmin, deleteNews);
+router.delete('/:id', verifyToken, isNewsUser, isAdmin, deleteNews);
 
 /**
  * @swagger
@@ -190,7 +191,7 @@ router.delete('/:id', verifyToken, isAdmin, deleteNews);
  *       '404':
  *         description: News not found
  */
-router.patch('/:id/submit', verifyToken, isReporter, submitNews);
+router.patch('/:id/submit', verifyToken, isNewsUser, isReporter, submitNews);
 
 /**
  * @swagger
@@ -226,7 +227,7 @@ router.patch('/:id/submit', verifyToken, isReporter, submitNews);
  *       '404':
  *         description: News not found
  */
-router.patch('/:id/approve', verifyToken, isEditor, approveNews);
+router.patch('/:id/approve', verifyToken, isNewsUser, isEditor, approveNews);
 
 /**
  * @swagger
@@ -251,7 +252,7 @@ router.patch('/:id/approve', verifyToken, isEditor, approveNews);
  *       '404':
  *         description: News not found
  */
-router.patch('/:id/reject', verifyToken, isEditor, rejectNews);
+router.patch('/:id/reject', verifyToken, isNewsUser, isEditor, rejectNews);
 
 /**
  * @swagger
@@ -276,7 +277,7 @@ router.patch('/:id/reject', verifyToken, isEditor, rejectNews);
  *       '404':
  *         description: News not found
  */
-router.get('/:id/versions', verifyToken, isEditor, getNewsVersions);
+router.get('/:id/versions', verifyToken, isNewsUser, isEditor, getNewsVersions);
 
 /**
  * @swagger
@@ -307,7 +308,7 @@ router.get('/:id/versions', verifyToken, isEditor, getNewsVersions);
  *       '404':
  *         description: News or version not found
  */
-router.patch('/:id/rollback/:versionId', verifyToken, isEditor, rollbackNews);
+router.patch('/:id/rollback/:versionId', verifyToken, isNewsUser, isEditor, rollbackNews);
 
 /**
  * @swagger
@@ -342,6 +343,46 @@ router.patch('/:id/rollback/:versionId', verifyToken, isEditor, rollbackNews);
  *       '403':
  *         description: Access denied
  */
-router.post('/add', verifyToken, isAdmin, addNews);
+router.post('/add', verifyToken, isNewsUser, isAdmin, addNews);
+
+// --- Subscription Routes ---
+
+/**
+ * @swagger
+ * /api/news/subscription:
+ *   post:
+ *     summary: Subscribe the current user
+ *     tags: [News, Subscription]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '201':
+ *         description: Subscription created successfully
+ *       '200':
+ *         description: Subscription reactivated
+ *       '409':
+ *         description: User is already subscribed
+ *       '403':
+ *         description: Access denied
+ */
+router.post('/subscription', verifyToken, isNewsUser, createSubscription);
+
+/**
+ * @swagger
+ * /api/news/subscription/status:
+ *   get:
+ *     summary: Get the subscription status of the current user
+ *     tags: [News, Subscription]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Subscription status retrieved successfully
+ *       '404':
+ *         description: No subscription found for this user
+ *       '403':
+ *         description: Access denied
+ */
+router.get('/subscription/status', verifyToken, isNewsUser, getSubscriptionStatus);
 
 module.exports = router;

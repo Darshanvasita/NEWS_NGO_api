@@ -12,6 +12,7 @@ db.Story = require("./story.model")(sequelize);
 db.Gallery = require("./gallery.model")(sequelize);
 db.Donation = require("./donation.model")(sequelize);
 db.Subscriber = require("./subscriber.model")(sequelize);
+db.Subscription = require("./subscription.model")(sequelize);
 // db.SubscriptionTemp = require('./subscriptionTemp.model')(sequelize);
 
 // ================= Associations ================= //
@@ -31,6 +32,10 @@ db.Donation.belongsTo(db.User, { as: "user", foreignKey: "userId" });
 // User <-> ENewspaper
 db.User.hasMany(db.ENewspaper, { foreignKey: "userId", as: "enewspapers" });
 db.ENewspaper.belongsTo(db.User, { as: "user", foreignKey: "userId" });
+
+// User <-> Subscription
+db.User.hasOne(db.Subscription, { foreignKey: 'userId', as: 'subscription' });
+db.Subscription.belongsTo(db.User, { as: 'user', foreignKey: 'userId' });
 
 // ================================================= //
 

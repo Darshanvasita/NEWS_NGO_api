@@ -7,17 +7,25 @@ module.exports = (sequelize) => {
       primaryKey: true,
       autoIncrement: true,
     },
-    filePath: {
+    title: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    pdfPath: {
       type: DataTypes.STRING,
       allowNull: false,
     },
     publishDate: {
-      type: DataTypes.DATE,
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
-    userId: {
-      type: DataTypes.INTEGER,
+    publishTime: {
+      type: DataTypes.TIME,
       allowNull: false,
+    },
+    isPublished: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
   }, {
     tableName: 'enewspapers',

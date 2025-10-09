@@ -32,10 +32,10 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, userType } = req.body;
 
   try {
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email, userType } });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -50,14 +50,16 @@ const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      { id: user.id, role: user.role, userType: user.userType },
       process.env.JWT_SECRET,
       {
         expiresIn: "1h",
       }
     );
 
-    res.status(200).json({ token, userId: user.id, role: user.role });
+    res
+      .status(200)
+      .json({ token, userId: user.id, role: user.role, userType: user.userType });
   } catch (error) {
     res
       .status(500)

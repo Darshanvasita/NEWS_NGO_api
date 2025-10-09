@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const { News, Subscriber } = require('../models');
+const { News, Subscriber, ENewspaper } = require('../models');
 const { Op } = require('sequelize');
 const { sendNewsletterEmail } = require('./mail.service');
 
@@ -60,10 +60,38 @@ service.sendWeeklyNewsletter = async () => {
   }
 };
 
+service.publishENewspapers = async () => {
+  try {
+    const unpublished = await ENewspaper.findAll({
+      where: { isPublished: false },
+    });
+
+    if (unpublished.length > 0) {
+      const now = new Date();
+      for (const enewspaper of unpublished) {
+        const publishDateTime = new Date(
+          `${enewspaper.publishDate}T${enewspaper.publishTime}`
+        );
+        if (publishDateTime <= now) {
+          enewspaper.isPublished = true;
+          await enewspaper.save();
+          console.log(`Published e-newspaper with ID: ${enewspaper.id}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error publishing e-newspapers:', error);
+  }
+};
+
 service.startScheduler = () => {
   // Run every minute to check for scheduled news
   cron.schedule('* * * * *', service.publishScheduledNews);
   console.log('Scheduler started to check for scheduled news every minute.');
+
+  // Run every minute to check for scheduled e-newspapers
+  cron.schedule('* * * * *', service.publishENewspapers);
+  console.log('Scheduler started to check for scheduled e-newspapers every minute.');
 
   // Run every Sunday at 9:00 AM for the weekly newsletter
   cron.schedule('0 9 * * 0', service.sendWeeklyNewsletter);

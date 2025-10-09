@@ -3,8 +3,10 @@ const {
   inviteUser,
   resendInvite,
   getPendingUsers,
+  uploadENewspaper,
 } = require("../controllers/admin.controller");
 const { verifyToken, isAdmin } = require("../middlewares/auth.middleware");
+const upload = require("../config/cloudinary");
 
 const router = express.Router();
 
@@ -145,5 +147,54 @@ router.post("/resend-invite", verifyToken, isAdmin, resendInvite);
  *         description: Something went wrong
  */
 router.get("/pending-users", verifyToken, isAdmin, getPendingUsers);
+
+/**
+ * @swagger
+ * /api/admin/enewspaper:
+ *   post:
+ *     summary: Upload an e-newspaper
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - publishDate
+ *               - publishTime
+ *               - pdf
+ *             properties:
+ *               title:
+ *                 type: string
+ *               publishDate:
+ *                 type: string
+ *                 format: date
+ *                 example: "2024-01-01"
+ *               publishTime:
+ *                 type: string
+ *                 format: time
+ *                 example: "18:00:00"
+ *               pdf:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       '201':
+ *         description: E-Newspaper uploaded successfully
+ *       '400':
+ *         description: Bad request
+ *       '403':
+ *         description: Access denied
+ */
+router.post(
+  "/enewspaper",
+  verifyToken,
+  isAdmin,
+  upload.single("pdf"),
+  uploadENewspaper
+);
 
 module.exports = router;

@@ -1,5 +1,5 @@
 const { log } = require("console");
-const { Subscriber } = require("../models");
+const { Subscriber, Subscription, sequelize } = require("../models");
 const { sendOtpEmail, sendWelcomeEmail } = require("../services/mail.service");
 const crypto = require("crypto");
 
@@ -127,8 +127,54 @@ const unsubscribe = async (req, res) => {
   }
 };
 
+const createSubscription = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    let subscription = await Subscription.findOne({ where: { userId } });
+
+    if (subscription) {
+      if (subscription.status === 'active') {
+        return res.status(409).json({ message: 'User is already subscribed.' });
+      }
+      // If subscription is inactive or cancelled, reactivate it
+      subscription.status = 'active';
+      subscription.endDate = null; // Reset end date
+      await subscription.save();
+      return res.status(200).json({ message: 'Subscription reactivated.', subscription });
+    }
+
+    // Create a new subscription
+    subscription = await Subscription.create({ userId, status: 'active' });
+
+    res.status(201).json({ message: 'Subscription created successfully.', subscription });
+  } catch (error) {
+    console.error('Create subscription error:', error);
+    res.status(500).json({ message: 'Something went wrong.', error: error.message });
+  }
+};
+
+const getSubscriptionStatus = async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    const subscription = await Subscription.findOne({ where: { userId } });
+
+    if (!subscription) {
+      return res.status(404).json({ message: 'No subscription found for this user.' });
+    }
+
+    res.status(200).json({ subscription });
+  } catch (error) {
+    console.error('Get subscription status error:', error);
+    res.status(500).json({ message: 'Something went wrong.', error: error.message });
+  }
+};
+
 module.exports = {
   subscribe,
   verifyOtp,
   unsubscribe,
+  createSubscription,
+  getSubscriptionStatus,
 };

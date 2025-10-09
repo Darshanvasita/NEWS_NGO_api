@@ -13,7 +13,7 @@ const verifyToken = async (req, res, next) => {
 
       // Get user from the token
       const user = await User.findByPk(decoded.id, {
-        attributes: ['id', 'email', 'role', 'status'],
+        attributes: ['id', 'email', 'role', 'status', 'userType'],
       });
       req.user = user ? user.get({ plain: true }) : null;
 
@@ -57,9 +57,27 @@ const isReporter = (req, res, next) => {
   }
 };
 
+const isNewsUser = (req, res, next) => {
+  if (req.user && req.user.userType === 'NEWS') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied. NEWS user role required.' });
+  }
+};
+
+const isNgoUser = (req, res, next) => {
+  if (req.user && req.user.userType === 'NGO') {
+    next();
+  } else {
+    res.status(403).json({ message: 'Access denied. NGO user role required.' });
+  }
+};
+
 module.exports = {
   verifyToken,
   isAdmin,
   isEditor,
   isReporter,
+  isNewsUser,
+  isNgoUser,
 };
