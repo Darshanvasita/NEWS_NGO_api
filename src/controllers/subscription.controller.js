@@ -1,7 +1,7 @@
-const { log } = require("console");
 const { Subscriber } = require("../models");
 const { sendOtpEmail, sendWelcomeEmail } = require("../services/mail.service");
 const crypto = require("crypto");
+const { sequelize } = require("../models");
 
 const subscribe = async (req, res) => {
   const { email } = req.body;
@@ -12,7 +12,7 @@ const subscribe = async (req, res) => {
 
   try {
     // Check if user is already subscribed
-    const existingSubscriber = await Subscriber.findOne({ where: { email } });
+    const existingSubscriber = await Subscriber.findOne({ where: { email, confirmed: true } });
     if (existingSubscriber) {
       return res
         .status(409)
@@ -23,11 +23,24 @@ const subscribe = async (req, res) => {
     const otp = crypto.randomInt(100000, 999999).toString();
     const expires_at = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes from now
 
-    // Store OTP in temp table
-    await Subscriber.create({ email, otp, expires_at });
+    // Create or update subscriber record with OTP
+    const [subscriber, created] = await Subscriber.findOrCreate({
+      where: { email },
+      defaults: { email, otp, expires_at, confirmed: false }
+    });
 
-    // Send OTP email
-    await sendOtpEmail(email, otp);
+    if (!created) {
+      // Update existing record with new OTP
+      await subscriber.update({ otp, expires_at, confirmed: false });
+    }
+
+    // Send OTP email (handle email service errors gracefully)
+    try {
+      await sendOtpEmail(email, otp);
+    } catch (emailError) {
+      console.error("Failed to send OTP email:", emailError);
+      // Don't fail the request if email sending fails
+    }
 
     res.status(200).json({
       message:
@@ -41,9 +54,8 @@ const subscribe = async (req, res) => {
     });
   }
 };
-const verifyOtp = async (req, res) => {
-  console.log("Verifying OTP with data:", req.body);
 
+const verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
 
   if (!email || !otp) {
@@ -51,29 +63,30 @@ const verifyOtp = async (req, res) => {
   }
 
   try {
-    const tempSub = await Subscriber.findOne({ where: { email } });
+    const subscriber = await Subscriber.findOne({ where: { email } });
 
-    if (!tempSub) {
+    if (!subscriber) {
       return res
         .status(400)
-        .json({ message: "No OTP request found for this email." });
+        .json({ message: "No subscription request found for this email." });
     }
 
-    if (tempSub.otp !== otp) {
+    if (subscriber.confirmed) {
+      return res
+        .status(400)
+        .json({ message: "This email is already subscribed." });
+    }
+
+    if (subscriber.otp !== otp) {
       return res.status(400).json({ message: "Invalid OTP." });
     }
 
-    if (tempSub.expires_at < new Date()) {
-      // auto-clean expired
-      await tempSub.destroy();
+    if (subscriber.expires_at < new Date()) {
       return res.status(400).json({ message: "OTP has expired." });
     }
 
-    // Transaction: move to Subscriber
-    await sequelize.transaction(async (t) => {
-      await Subscriber.create({ email }, { transaction: t });
-      await tempSub.destroy({ transaction: t });
-    });
+    // Update subscriber as confirmed
+    await subscriber.update({ confirmed: true, otp: null, expires_at: null });
 
     // Send welcome mail (do not block response if fails)
     sendWelcomeEmail(email).catch((err) =>
@@ -81,14 +94,9 @@ const verifyOtp = async (req, res) => {
     );
 
     return res
-      .status(201)
+      .status(200)
       .json({ message: "Subscription successful. Welcome aboard!" });
   } catch (error) {
-    if (error.name === "SequelizeUniqueConstraintError") {
-      return res
-        .status(409)
-        .json({ message: "This email is already subscribed." });
-    }
     console.error(error);
     return res.status(500).json({
       message: "Something went wrong during verification.",
@@ -105,7 +113,7 @@ const unsubscribe = async (req, res) => {
   }
 
   try {
-    const subscriber = await Subscriber.findOne({ where: { email } });
+    const subscriber = await Subscriber.findOne({ where: { email, confirmed: true } });
 
     if (!subscriber) {
       return res

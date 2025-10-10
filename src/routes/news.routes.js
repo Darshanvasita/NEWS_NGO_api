@@ -24,6 +24,7 @@ const {
   unsubscribe,
 } = require("../controllers/subscription.controller");
 const upload = require("../config/cloudinary");
+const { validate, sanitize, validationRules } = require('../middlewares/validation.middleware');
 
 const router = express.Router();
 
@@ -70,7 +71,7 @@ const router = express.Router();
  *       '403':
  *         description: Access denied
  */
-router.post("/", verifyToken, isReporter, upload.single("pdf"), createNews);
+router.post("/", sanitize, verifyToken, isReporter, upload.single("pdf"), createNews);
 
 /**
  * @swagger
@@ -158,6 +159,7 @@ router.get("/:id", getNewsById);
  */
 router.put(
   "/:id",
+  sanitize,
   verifyToken,
   (req, res, next) => {
     if (
@@ -373,7 +375,7 @@ router.patch("/:id/rollback/:versionId", verifyToken, isEditor, rollbackNews);
  *       '403':
  *         description: Access denied
  */
-router.post("/add", verifyToken, isAdmin, addNews);
+router.post("/add", sanitize, verifyToken, isAdmin, validationRules.news.add, validate, addNews);
 
 /**
  * @swagger

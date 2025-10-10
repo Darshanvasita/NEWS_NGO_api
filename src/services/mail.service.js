@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 
+// Use the same transporter configuration as in email.service.js
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -12,34 +13,37 @@ const sendOtpEmail = async (email, otp) => {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: "Verify your Email ",
-    html: `<table width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" border="0">
-          <tr>
-            <td align="center">
-              <img src="https://yourdomain.com/logo.png" alt="Brand Logo" width="150">
-            </td>
-          </tr>
-          <tr>
-            <td>
-              <h2>Verify Your Subscription</h2>
-              <p>Hi ,</p>
-              <p>Use the OTP below to verify your subscription. This OTP is valid for 10 minutes.</p>
-              <p align="center" style="font-size:24px; font-weight:bold;">${otp}</p>
-              <p>If you did not request this, please ignore this email.</p>
-             
-            </td>
-          </tr>
-          <tr>
-            <td align="center">© 2025 [Your Company]. All rights reserved.</td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-    `,
+    subject: "Verify your Email for Newsletter Subscription",
+    html: `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Newsletter Subscription Verification</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 20px 0; }
+        .otp { font-size: 32px; font-weight: bold; text-align: center; letter-spacing: 5px; margin: 30px 0; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #777; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2>Newsletter Subscription Verification</h2>
+        </div>
+        <p>Hello,</p>
+        <p>Thank you for subscribing to our newsletter. Please use the following OTP to verify your email address:</p>
+        <div class="otp">${otp}</div>
+        <p>This OTP is valid for 5 minutes. If you didn't request this subscription, please ignore this email.</p>
+        <div class="footer">
+          <p>&copy; 2025 News NGO. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>`,
   };
 
   await transporter.sendMail(mailOptions);
@@ -51,41 +55,34 @@ const sendWelcomeEmail = async (email) => {
     to: email,
     subject: "Welcome to Our Newsletter! 🎉",
     html: `
-      <table width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6e9ee; border-radius:8px;">
-          <!-- Header / Brand Logo -->
-          <tr>
-            <td align="center" style="padding:20px;">
-              <img src="https://yourdomain.com/logo.png" alt="Brand Logo" width="150">
-            </td>
-          </tr>
-          <!-- Body -->
-          <tr>
-            <td style="padding:20px; font-family: Arial, sans-serif; font-size:15px; line-height:1.5;">
-              <h2>Welcome to [Your Company Name]!</h2>
-              <p>Hi <strong>[User Name]</strong>,</p>
-              <p>We’re excited to have you on board! Thank you for joining <strong>[Your Company Name]</strong>. You now have access to our platform and all its features.</p>
-              <p>To get started, please verify your email or complete your profile using the button below:</p>
-              <p align="center">
-                <a href="[Verification Link]" style="display:inline-block; padding:12px 20px; background:#1a73e8; color:#fff; text-decoration:none; border-radius:6px;">Get Started</a>
-              </p>
-              <p>If you have any questions, feel free to reply to this email. We’re here to help!</p>
-              <p>Welcome aboard,<br><strong>The [Your Company Name] Team</strong></p>
-            </td>
-          </tr>
-          <!-- Footer -->
-          <tr>
-            <td align="center" style="padding:16px; font-size:12px; color:#8b9096;">
-              © 2025 [Your Company]. All rights reserved.
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-    `,
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Welcome to Our Newsletter</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #777; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2>Welcome to Our Newsletter!</h2>
+        </div>
+        <p>Hello,</p>
+        <p>You have been successfully subscribed to our newsletter. You'll now receive our latest news and updates directly in your inbox.</p>
+        <p>If you have any questions or need assistance, feel free to reach out to us.</p>
+        <p>Best regards,<br><strong>The News NGO Team</strong></p>
+        <div class="footer">
+          <p>&copy; 2025 News NGO. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>`,
   };
 
   await transporter.sendMail(mailOptions);
@@ -95,62 +92,57 @@ const sendNewsletterEmail = async (email, newsItems) => {
   const newsListHtml = newsItems
     .map(
       (item) =>
-        `<li><a href="${item.link}">${item.title}</a>: ${item.description}</li>`
+        `<li style="margin-bottom: 15px;">
+          <h3><a href="${item.link}" style="color: #1a73e8; text-decoration: none;">${item.title}</a></h3>
+          <p>${item.description}</p>
+        </li>`
     )
     .join("");
 
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: "📰 Weekly Highlights from Your News Site",
+    subject: "📰 Weekly Highlights from News NGO",
     html: `
-       <table width="100%" cellpadding="0" cellspacing="0" border="0">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6e9ee; border-radius:8px;">
-          
-          <!-- Header / Brand Logo -->
-          <tr>
-            <td align="center" style="padding:20px;">
-              <img src="https://yourdomain.com/logo.png" alt="Brand Logo" width="150">
-            </td>
-          </tr>
-          
-          <!-- Body -->
-          <tr>
-            <td style="padding:20px; font-family: Arial, sans-serif; font-size:15px; line-height:1.5;">
-              <p>Hey there,</p>
-              <p>Here are this week's top stories:</p>
-              
-              <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td>
-                    <ul>
-                      ${newsListHtml}
-                    </ul>
-                  </td>
-                </tr>
-              </table>
-              
-              <p>Stay tuned for more updates next week!</p>
-              
-              <hr>
-              
-              <p><small>To unsubscribe, <a href="${process.env.APP_URL}/api/unsubscribe?email=${email}">click here</a>.</small></p>
-            </td>
-          </tr>
-          
-          <!-- Footer -->
-          <tr>
-            <td align="center" style="padding:16px; font-size:12px; color:#8b9096;">
-              © 2025 [Your Company]. All rights reserved.
-            </td>
-          </tr>
-          
-        </table>
-      </td>
-    </tr>
-  </table>`,
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Weekly Newsletter</title>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #777; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h2>Weekly Highlights</h2>
+        </div>
+        <p>Hello,</p>
+        <p>Here are this week's top stories:</p>
+        
+        <ul style="list-style-type: none; padding: 0;">
+          ${newsListHtml}
+        </ul>
+        
+        <p>Stay tuned for more updates next week!</p>
+        
+        <hr>
+        
+        <p style="font-size: 12px; color: #777;">
+          <a href="${process.env.APP_URL || 'http://localhost:3000'}/api/subscribe/unsubscribe?email=${email}">Unsubscribe</a> from this newsletter.
+        </p>
+        
+        <div class="footer">
+          <p>&copy; 2025 News NGO. All rights reserved.</p>
+        </div>
+      </div>
+    </body>
+    </html>`,
   };
 
   await transporter.sendMail(mailOptions);

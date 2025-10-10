@@ -5,6 +5,7 @@ const {
   getPendingUsers,
 } = require("../controllers/admin.controller");
 const { verifyToken, isAdmin } = require("../middlewares/auth.middleware");
+const { validate, validationRules } = require('../middlewares/validation.middleware');
 
 const router = express.Router();
 
@@ -62,7 +63,7 @@ const router = express.Router();
  *       '500':
  *         description: Something went wrong
  */
-router.post("/invite", verifyToken, isAdmin, inviteUser);
+router.post("/invite", verifyToken, isAdmin, validationRules.user.invite, validate, inviteUser);
 
 /**
  * @swagger

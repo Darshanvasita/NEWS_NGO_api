@@ -1,6 +1,9 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const morgan = require("morgan");
+const helmet = require("helmet");
+const logger = require("./config/logger");
 
 // Only load config.env in development, not in test or production
 if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test") {
@@ -11,27 +14,40 @@ if (process.env.NODE_ENV !== "production" && process.env.NODE_ENV !== "test") {
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// API call logging middleware
-app.use((req, res, next) => {
-  const timestamp = new Date().toLocaleString();
-  console.log(`[${timestamp}] ${req.method} ${req.originalUrl}`);
-
-  // Log request body for POST/PUT requests
-  if (req.method === "POST" || req.method === "PUT") {
-    console.log("Request Body:", JSON.stringify(req.body, null, 2));
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "https:", "data:"],
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true
   }
+}));
 
-  // Log query parameters if they exist
-  if (Object.keys(req.query).length > 0) {
-    console.log("Query Params:", JSON.stringify(req.query, null, 2));
-  }
+// CORS configuration
+const corsOptions = {
+  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
 
-  next();
-});
+app.use(cors(corsOptions));
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// HTTP request logging using morgan
+app.use(morgan(":method :url :status :res[content-length] - :response-time ms", { stream: logger.stream }));
 
 // Serve static files from the uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -49,6 +65,7 @@ const subscriptionRoutes = require("./routes/subscription.routes");
 const { sequelize } = require("./models");
 const schedulerService = require("./services/scheduler.service");
 const { testEmailConfiguration } = require("./services/email.service");
+const errorHandler = require("./middlewares/error.middleware");
 
 app.get("/", (req, res) => {
   res.send("Server is running!");
@@ -61,7 +78,10 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/news/e-newspaper", enewspaperRoutes);
 app.use("/api/ngo", ngoRoutes);
-// app.use("/api/subscribe", subscriptionRoutes);
+app.use("/api/subscribe", subscriptionRoutes);
+
+// Error handling middleware
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
 

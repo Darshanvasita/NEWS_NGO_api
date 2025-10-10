@@ -18,6 +18,19 @@ module.exports = (sequelize) => {
         isEmail: true,
       },
     },
+    otp: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    expires_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+    confirmed: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false,
+    },
   }, {
     sequelize,
     modelName: 'Subscriber',

@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: news_ngo_db
+    environment:
+      POSTGRES_DB: news_ngo
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  # Application
+  app:
+    build: .
+    container_name: news_ngo_api
+    depends_on:
+      - db
+    environment:
+      PG_HOST: db
+      PG_PORT: 5432
+      PG_DB: news_ngo
+      PG_USER: postgres
+      PG_PASSWORD: postgres
+      JWT_SECRET: your_jwt_secret_here
+      EMAIL_USER: your_email@example.com
+      EMAIL_PASS: your_email_password
+      EMAIL_FROM: your_email@example.com
+      NODE_ENV: development
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src/uploads:/app/src/uploads
+      - ./logs:/app/logs
+    restart: unless-stopped
+    develop:
+      watch:
+        - path: ./src
+          action: rebuild
+
+volumes:
+  postgres_data:

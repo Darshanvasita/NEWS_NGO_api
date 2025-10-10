@@ -9,6 +9,8 @@ const {
 } = require('../controllers/ngo.controller');
 const { verifyToken, isAdmin } = require('../middlewares/auth.middleware');
 const upload = require('../config/cloudinary');
+const { validate, sanitize, validationRules } = require('../middlewares/validation.middleware');
+const { uploadLimiter } = require('../middlewares/rateLimiter');
 
 const router = express.Router();
 
@@ -50,7 +52,7 @@ const router = express.Router();
  *       '403':
  *         description: Access denied
  */
-router.post('/stories', verifyToken, isAdmin, upload.single('image'), createStory);
+router.post('/stories', uploadLimiter, sanitize, verifyToken, isAdmin, upload.single('image'), validationRules.ngo.story, validate, createStory);
 
 /**
  * @swagger
@@ -97,7 +99,7 @@ router.get('/stories', getAllStories);
  *       '403':
  *         description: Access denied
  */
-router.post('/gallery', verifyToken, isAdmin, upload.single('media'), createGalleryItem);
+router.post('/gallery', uploadLimiter, sanitize, verifyToken, isAdmin, upload.single('media'), validationRules.ngo.gallery, validate, createGalleryItem);
 
 /**
  * @swagger
@@ -141,7 +143,7 @@ router.get('/gallery', getAllGalleryItems);
  *         description: Not authorized
  *     description: This is a mocked endpoint. It simulates a successful payment without a real payment gateway.
  */
-router.post('/donate', verifyToken, createDonation);
+router.post('/donate', sanitize, verifyToken, validationRules.ngo.donation, validate, createDonation);
 
 /**
  * @swagger

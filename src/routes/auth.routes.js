@@ -7,6 +7,9 @@ const {
   forgotPassword,
   resetPassword,
 } = require("../controllers/auth.controller");
+const { validate, sanitize, validationRules } = require('../middlewares/validation.middleware');
+const { authLimiter } = require('../middlewares/rateLimiter');
+const { xssProtection, rateLimitByIP, resetFailedAttempts } = require('../middlewares/security.middleware');
 
 const router = express.Router();
 
@@ -53,7 +56,7 @@ const router = express.Router();
  *       '500':
  *         description: Something went wrong
  */
-router.post("/register", register);
+router.post("/register", authLimiter, sanitize, validationRules.user.register, validate, register);
 
 /**
  * @swagger
@@ -102,7 +105,7 @@ router.post("/register", register);
  *       '500':
  *         description: Something went wrong
  */
-router.post("/login", login);
+router.post("/login", authLimiter, xssProtection, rateLimitByIP, sanitize, validationRules.user.login, validate, login);
 
 /**
  * @swagger
@@ -153,7 +156,7 @@ router.post("/login", login);
  *       '500':
  *         description: Something went wrong
  */
-router.post("/accept-invite/:token", acceptInvite);
+router.post("/accept-invite/:token", authLimiter, sanitize, acceptInvite);
 
 /**
  * @swagger
@@ -182,7 +185,7 @@ router.post("/accept-invite/:token", acceptInvite);
  *       '500':
  *         description: Something went wrong
  */
-router.post("/forgot-password", forgotPassword);
+router.post("/forgot-password", authLimiter, sanitize, forgotPassword);
 
 /**
  * @swagger
@@ -218,7 +221,7 @@ router.post("/forgot-password", forgotPassword);
  *       '500':
  *         description: Something went wrong
  */
-router.post("/reset-password/:token", resetPassword);
+router.post("/reset-password/:token", authLimiter, sanitize, resetPassword);
 
 /**
  * @swagger
